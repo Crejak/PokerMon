@@ -327,7 +327,7 @@ class Generator {
         let nature = await this._chooseGet(natures);
 
         let ability = gen.abilities.length > 0
-            ? await this._chooseGet(gen.abilities)
+            ? this._choose(gen.abilities)
             : undefined;
         console.log("Ability : ");
         console.log(ability);

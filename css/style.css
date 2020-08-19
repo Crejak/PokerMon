@@ -1,0 +1,32 @@
+.pkmn {
+    width: 400px;
+    border: 1px solid red;
+}
+
+.col {
+    display: inline-block;
+}
+
+.hintable {
+    position: relative;
+}
+
+.hint {
+    display: none;
+    border: 1px solid black;
+    background: white;
+    position: absolute;
+    z-index: 10;
+}
+
+.hintable:hover {
+    cursor: default;
+}
+
+.hintable:hover .hint {
+    display: block;
+}
+
+.hintable:hover .hint:hover {
+    display: none;
+}

@@ -34,13 +34,20 @@ class PokeApiClient {
                         pokemons.push(variety.pokemon);
                     }
                 }
+                let abilities = [];
+                for (let ra of gen.abilities) {
+                    let ability = await this.get(ra);
+                    if (ability.is_main_series) {
+                        abilities.push(ability);
+                    }
+                }
                 lastGen = new Generation(
                     gen.id,
                     this._name(gen),
-                    lastGen ? lastGen.moves.concat(gen.moves) : gen.moves.slice(),
+                    lastGen ? lastGen.moves.concat(gen.moves) : gen.moves.slice(), //TODO! filtrer les moves sur la série principale
                     pokemons,
                     pokemon_species,
-                    lastGen ? lastGen.abilities.concat(gen.abilities) : gen.abilities.filter(a => a.is_main_series).slice(), //TODO! corriger le filtre main series
+                    lastGen ? lastGen.abilities.concat(abilities) : abilities.slice(),
                     //items
                 );
                 this.gens.push(lastGen);

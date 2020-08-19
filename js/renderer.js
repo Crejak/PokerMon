@@ -1,15 +1,17 @@
 const PKMN_HTML = `
 <div class="pkmn" data-id="%id%">
-    <div class="picture">
-        <img src="%picture%" />
+    <div class="row">
+        <div class="col picture">
+            <img src="%picture%" />
+        </div>
+        <div class="col infos">
+            <div class="name">%name%</div>
+            <div class="gender">%gender%</div>
+            <div class="level">%level%</div>
+            <div class="nature">%nature%</div>
+        </div>
     </div>
-    <div class="infos">
-        <div class="name">%name%</div>
-        <div class="gender">%gender%</div>
-        <div class="level">%level%</div>
-    </div>
-    <div class="nature">%nature%</div>
-    <div class="stats">
+    <div class="row stats">
     </div>
     <div class="ability">%ability%</div>
     <ul class="moves">
@@ -77,8 +79,11 @@ const STATS_HTML = `
 `;
 
 const MOVE_HTML = `
-<div class="move">
+<div class="move hintable">
     %move%
+    <div class="hint">
+        %hint%
+    </div>
 </div>
 `;
 
@@ -92,7 +97,7 @@ class Renderer {
 
     _format (html, params) {
         for (let key in params) {
-            html = html.replace("%" + key + "%", params[key]);
+            html = html.replaceAll("%" + key + "%", params[key]);
         }
         return html;
     }
@@ -146,8 +151,17 @@ class Renderer {
 
         for (let move of pokemon.moves) {
             let moveLi = document.createElement("li");
+            let flavors = this.pokeApiClient.getFlavorTexts(move);
+            let hint = flavors.reduce((hint, cur) => {
+                let text = cur.flavor_text.replaceAll("\n", " ");
+                if (hint === "") {
+                    return text;
+                }
+                return hint + "<br />" + text;
+            }, "");
             moveLi.innerHTML = this._format(MOVE_HTML, {
-                move: this.pokeApiClient.getName(move)
+                move: this.pokeApiClient.getName(move),
+                hint: hint
             });
             this._$pkmn(id, ".moves").appendChild(moveLi);
         }
