@@ -81,6 +81,23 @@ const MV_PKMN_TYPE_N = "mv_pkmn_type_n";
  */
 const MV_MOVES_TYPE = "mv_moves_type";
 
+//////////////////////
+//  Ability generation
+
+/**
+ * Random ability
+ */
+const AB_RANDOM = "ab_random";
+/**
+ * Random ability with some exceptions :
+ * - Shedinja can only get Wonder Guard
+ */
+const AB_RANDOM_EXCEPT = "ab_random_except";
+/**
+ * Random ability among the Pokémon's possible abilities
+ */
+const AB_PKMN = "ab_pkmn";
+
 
 const EV_MAX = 508;
 const EV_TRUE_MAX = 510;
@@ -203,6 +220,10 @@ class Generator {
     //////////////////////
     //  Generation methods
 
+    _generateVariety () {
+        //TODO!
+    }
+
     _randGender (genderRate) {
         if (genderRate === -1) {
             return GENDERLESS;
@@ -320,6 +341,8 @@ class Generator {
         let gen = this.pokeApiClient.getGen(this.generationId);
         
         //TODO! changer cette logique ? Une espèce peut parfois avoir des variantes d'après la doc (ex: wormadam)
+        // objectif : choisir soit selon l'espèce, soit selon la variété (voir options)
+        // --> _generateVariety()
         let species = await this._chooseGet(gen.pokemon_species);
         let pokemon = await this.pokeApiClient.getPokemon(species.id);
 

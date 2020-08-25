@@ -1,12 +1,23 @@
 class Generation {
-    constructor(id, name, moves, pokemons, pokemon_species, abilities, items) {
+    constructor(id, name, versionGroups, moves, pokemons, pokemon_species, abilities, items) {
         this.id = id;
-        this.name = name;
-        this.moves = moves;
-        this.pokemons = pokemons;
-        this.pokemon_species = pokemon_species;
-        this.abilities = abilities;
+        this.name = name; //string
+        this.versionGroups = versionGroups; //resource + attribute "versions" resource
+        this.moves = moves; //ra
+        this.pokemons = pokemons; //resource
+        this.pokemon_species = pokemon_species; //resource
+        this.abilities = abilities; //resource
         this.items = items;
+    }
+}
+
+class VersionGroup {
+    constructor(id, order, generationId, pokemons, versions) {
+        this.id = id;
+        this.order = order;
+        this.generationId = generationId;
+        this.pokemons = pokemons;
+        this.versions = versions;
     }
 }
 
@@ -16,41 +27,82 @@ class PokeApiClient {
         this.language = "fr";
         this.fallbackLanguage = "en";
         this.gens = []; //TODO! récupérer aussi les groupes de version
+        this.vgs = [];
         this.cache = {};
 
         this.readyPromise = this._getGeneration()
         .then(async (response) => {
             let genCount = response.count;
-            let genRefs = response.results;
+            let genRas = response.results;
             let lastGen = undefined;
     
-            for (let genRef of genRefs) {
-                let gen = await this._call(genRef.url);
+            for (let genRa of genRas) { // Loop the gens, to create the corresponding objects
+                let gen = await this.get(genRa);
+
                 let pokemon_species = lastGen ? lastGen.pokemon_species.concat(gen.pokemon_species) : gen.pokemon_species.slice();
-                let pokemons = [];
-                for (let speciesRa of gen.pokemon_species) { //Extract pokemons from the species
+
+                let pokemons = lastGen ? lastGen.pokemons.slice() : [];
+                for (let [index, speciesRa] of gen.pokemon_species.entries()) { //Extract pokemons from the species
                     let species = await this.get(speciesRa);
+                    gen.pokemon_species[index] = species;
                     for (let variety of species.varieties) {
-                        pokemons.push(variety.pokemon);
+                        let pokemon = await this.get(variety.pokemon);
+                        pokemons.push(pokemon);
                     }
                 }
+
                 let abilities = [];
-                for (let ra of gen.abilities) {
+                for (let ra of gen.abilities) { // Get and filter abilities (main series only)
                     let ability = await this.get(ra);
                     if (ability.is_main_series) {
                         abilities.push(ability);
                     }
                 }
+
+                let versionGroups = [];
+                for (let ra of gen.version_groups) { // Construction des groupes de versions
+                    let versionGroup = await this.get(ra);
+
+                    let versions = [];
+                    for (let versionRa of versionGroup.versions) {
+                        let version = await this.get(versionRa);
+                        versions.push(version);
+                    }
+
+                    this.vgs.push(new VersionGroup(
+                        versionGroup.id,
+                        versionGroup.order,
+                        gen.id,
+                        [], // On rempli les Pokémon après
+                        versions
+                    ));
+                    
+                    versionGroup.versions = versions;
+                    versionGroups.push(versionGroup);
+                }
+
                 lastGen = new Generation(
                     gen.id,
                     this._name(gen),
-                    lastGen ? lastGen.moves.concat(gen.moves) : gen.moves.slice(), //TODO! filtrer les moves sur la série principale
+                    versionGroups,
+                    lastGen ? lastGen.moves.concat(gen.moves) : gen.moves.slice(), //TODO! filtrer les moves sur la série principale (ex: 10001)
                     pokemons,
                     pokemon_species,
                     lastGen ? lastGen.abilities.concat(abilities) : abilities.slice(),
                     //items
                 );
                 this.gens.push(lastGen);
+            }
+
+            //Second step : loop all Pokémons to fit them into version groups
+            // By construction, lastGen contains all Pokémon, we can loop over it :
+            for (let pokemon of lastGen.pokemons) {
+                // We need to add this pokémon to all versionGens it belong.
+                let forms = pokemon.forms;
+                if (forms.length !== 1) {
+                    console.error("Alerte ! Pokémon avec " + forms.length + " formes !");
+                    console.log(pokemon);
+                }
             }
         });
     }

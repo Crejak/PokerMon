@@ -12,7 +12,7 @@ The V0.1 of PokerMon should allow something similar to that.
 
 ## Get informations about Pokémons
 
-The source of informations about species, moves, abilities, etc. used to generate random Pokémons is the [PokéAPI](https://pokeapi.co). Currently, all necessary information (which is a lot !) is retrieved each time you launch PokerMon. In the future, I would like to greatly reduce the loading time by just storing the minimum information which is required to generate random Pokémon and Moves, and then retrieve further data to display from PokéAPI.
+The source of informations about species, moves, abilities, etc. used to generate random Pokémons is the [PokéAPI](https://pokeapi.co). Currently, all necessary information (which is a lot !) is retrieved each time you launch PokerMon. The loading time is juste ridiculous right now, so in the future, I would like to greatly reduce it by just storing the minimum information which is required to generate random Pokémon and Moves, and then retrieve further data to display from PokéAPI.
 
 ## Generate random Pokémons
 
