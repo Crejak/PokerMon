@@ -44,5 +44,17 @@ var Utils = {
         let indexes = [...Array(list.length).keys()];
         indexes = Utils.shuffle(indexes);
         return indexes.slice(0, count).map(index => list[index]);
+    },
+    chooseWeighted: function (list) {
+        let total = list.reduce((sum, [curObj, curWeight]) => {return sum + curWeight}, 0);
+        let dice = Utils.randInt(total);
+        let sum = 0;
+        for (let [obj, weight] of list) {
+            sum += weight;
+            if (dice < sum) {
+                return obj;
+            }
+        }
+        throw "Unreachable";
     }
 };

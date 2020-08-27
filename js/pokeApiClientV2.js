@@ -84,6 +84,7 @@ class PokeApiClientV2 {
         }
 
         let resource = await this._call(url);
+        resource._url = url;
         for (let fieldDesc of includeFields) {
             let fieldPath;
             let fieldArPath;

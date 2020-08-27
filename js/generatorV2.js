@@ -4,6 +4,9 @@ const GENDERLESS = "genderless"
 
 const DEFAULT_LANGUAGE = "en";
 
+const NORMAL_TYPE = "normal";
+const NORMAL_TYPE_ID = Object.values(_gl_type).find(t => t.name === NORMAL_TYPE).id;
+
 //////////////////////
 //  Pokémon generation
 
@@ -162,6 +165,8 @@ class GeneratorV2 {
         this.speciesEntries = _gl_speciesEntries;
         this.varietyEntries = [];
         this.formEntries = [];
+        this.moveEntries = _gl_moveEntries;
+        this.types = _gl_type;
 
         // preprocess
         this._computeEntries();
@@ -299,6 +304,8 @@ class GeneratorV2 {
     async generate () {
         let [species, variety, form] = await this._generatePokemon();
 
+        let moves = await this._generateMoves(variety);
+
         return new PokemonV2 (
             species,
             variety,
@@ -319,18 +326,18 @@ class GeneratorV2 {
             let validSpeciesEntries = this.speciesEntries.filter(s =>
                 this._validateVersionGroupEntry(s));
             let speciesEntry = Utils.choose(validSpeciesEntries);
-            species = await this.pokeApi.get(speciesEntry.accessUrl);
+            species = await this.pokeApi.get(speciesEntry.url);
 
             let validVarietyEntries = speciesEntry.varieties.filter(v =>
                 this._validateVersionGroupEntry(v));
             let varietyEntry;
             if (this._pkRandomVariety()) {
                 varietyEntry = (Utils.choose(validVarietyEntries));
-                variety = await this.pokeApi.get(varietyEntry.accessUrl);
+                variety = await this.pokeApi.get(varietyEntry.url);
             } else {
                 for (let validVarietyEntry of validVarietyEntries) { //TODO! réduire le nombre de requêtes en passant par species.varieties (PokemonSpeciesVariety)
                     varietyEntry = validVarietyEntry;
-                    variety = await this.pokeApi.get(validVarietyEntry.accessUrl);
+                    variety = await this.pokeApi.get(validVarietyEntry.url);
                     if (variety.is_default) {
                         break;
                     }
@@ -342,11 +349,11 @@ class GeneratorV2 {
             let formEntry;
             if (this._pkRandomForm()) {
                 formEntry = (Utils.choose(validFormEntries));
-                form = await this.pokeApi.get(formEntry.accessUrl);
+                form = await this.pokeApi.get(formEntry.url);
             } else {
                 for (let validFormEntry of validFormEntries) {
                     formEntry = validFormEntry;
-                    form = await this.pokeApi.get(validFormEntry.accessUrl);
+                    form = await this.pokeApi.get(validFormEntry.url);
                     if (form.is_default) {
                         break;
                     }
@@ -357,20 +364,20 @@ class GeneratorV2 {
             let validVarietyEntries = this.varietyEntries.filter(v =>
                 this._validateVersionGroupEntry(v));
             let varietyEntry = Utils.choose(validVarietyEntries);
-            species = await this.pokeApi.get(varietyEntry.species.accessUrl);
+            species = await this.pokeApi.get(varietyEntry.species.url);
 
-            variety = await this.pokeApi.get(varietyEntry.accessUrl);
+            variety = await this.pokeApi.get(varietyEntry.url);
 
             let validFormEntries = varietyEntry.forms.filter(f =>
                 this._validateVersionGroupEntry(f));
             let formEntry;
             if (this._pkRandomForm()) {
                 formEntry = (Utils.choose(validFormEntries));
-                form = await this.pokeApi.get(formEntry.accessUrl);
+                form = await this.pokeApi.get(formEntry.url);
             } else {
                 for (let validFormEntry of validFormEntries) {
                     formEntry = validFormEntry;
-                    form = await this.pokeApi.get(validFormEntry.accessUrl);
+                    form = await this.pokeApi.get(validFormEntry.url);
                     if (form.is_default) {
                         break;
                     }
@@ -382,14 +389,63 @@ class GeneratorV2 {
                 this._validateVersionGroupEntry(f));
             let formEntry = Utils.choose(validFormEntries);
             let varietyEntry = formEntry.variety;
-            species = await this.pokeApi.get(varietyEntry.species.accessUrl);
+            species = await this.pokeApi.get(varietyEntry.species.url);
 
-            variety = await this.pokeApi.get(varietyEntry.accessUrl);
+            variety = await this.pokeApi.get(varietyEntry.url);
 
-            form = await this.pokeApi.get(formEntry.accessUrl);
+            form = await this.pokeApi.get(formEntry.url);
         }
 
         return [species, variety, form];
+    }
+
+    async _generateMoves (variety) {
+        let allMoves = this.moveEntries.filter(me => this._validateVersionGroup([...me.versionGroups]));
+        let varietyEntry = this.varietyEntries.find(v => v.url === variety._url);
+        let moveEntries = [];
+        let moves = [];
+        if (this._mvFourFromPool()) {
+            let movePool = [];
+            let pkmnTypeIds = variety.types.map(t => this._getTypeId(t.type));
+            let pkmnMoves = varietyEntry.moves.filter(pm => this._validateVersionGroup(pm.vgLvls.map(([vg, _]) => vg)));
+
+            if (this.moveGM === MV_RANDOM) {
+                movePool = allMoves;
+            } else if (this.moveGM === MV_PKMN_TYPE) {
+                movePool = this._getMovesWithTypes(allMoves, pkmnTypeIds);
+            } else if (this.moveGM === MV_PKMN_TYPE_N) {
+                movePool = this._getMovesWithTypes(allMoves, [...pkmnTypeIds, NORMAL_TYPE_ID]);
+            } else if (this.moveGM === MV_PKMN_MOVES) {
+                movePool = pkmnMoves;
+            } else { //if (this.moveGM === MV_PKMN_MOVES_LEVEL) {
+                movePool = pkmnMoves.filter(pm => pm.vgLvls.some(([vg, lvl]) => vg === this.targetVersionGroup && lvl <= this.pokemonLevel));
+            }
+
+            let moveCount = Math.min(4, movePool.length);
+            moveEntries = Utils.chooseMultiple(movePool, moveCount);
+        } else { //if (this.moveGM === MV_MOVES_TYPE) {
+            let moveCollection = {};
+            let moveTypeWeightedPool = [];
+            for (let [typeId, weight] of Object.entries(varietyEntry.moveTypes)) {
+                moveCollection[typeId] = allMoves.filter(me => me.typeId === typeId);
+                moveTypeWeightedPool.push([typeId, weight]);
+            }
+
+            while (moveEntries.length < 4) {
+                let typeId = Utils.chooseWeighted(moveTypeWeightedPool);
+                let move = Utils.choose(moveCollection[typeId]);
+                if (!moveEntries.some(me => me.url === move.url)) {
+                    moveEntries.push(move);
+                }
+            }
+        }
+
+        for (let moveEntry of moveEntries) {
+            let move = await this.pokeApi.get(moveEntry);
+            moves.push(move);
+        }
+
+        return moves;
     }
 
     /////////////////////////
@@ -413,6 +469,11 @@ class GeneratorV2 {
 
     _pkFormFirst () {
         return this.pokemonGM === PK_FORM;
+    }
+
+    _mvFourFromPool () {
+        return this.moveGM === MV_RANDOM || this.moveGM === MV_PKMN_MOVES || this.moveGM === MV_PKMN_MOVES_LEVEL
+            || this.moveGM === MV_PKMN_TYPE || this.moveGM === MV_PKMN_TYPE_N;
     }
 
     _validateVersionGroup (orders) {
@@ -439,12 +500,52 @@ class GeneratorV2 {
         return this._validateVersionGroup(this._getVersionGroupOrders(entry));
     }
 
+    _getTypeId (typeAccess) {
+        if (Object.values(this.types).some(t => t.id === typeAccess || t.name === typeAccess)) {
+            return typeAccess;
+        }
+        let url;
+        if (typeof(typeAccess) === "string") {
+            url = typeAccess;
+        } else {
+            url = typeAccess.url;
+        }
+        if (!url) {
+            throw "Invalid type access : " + typeAccess;
+        }
+        let type = this.types[url];
+        if (!type) {
+            throw "Invalid type access : " + typeAccess;
+        }
+        return type.id;
+    }
+
+    _getMovesWithTypes (moveEntries, typeIds) {
+        return moveEntries.filter(me => typeIds.includes(me.move.typeId));
+    }
+
     ///////////////////
     //  Preprocess data
 
     _computeEntries () {
         for (let speciesEntry of this.speciesEntries) {
             for (let varietyEntry of speciesEntry.varieties) {
+                let moveTypes = {};
+                for (let pkmnMoveEntry of varietyEntry.moves) {
+                    let moveEntry = this.moveEntries[pkmnMoveEntry.index];
+                    if (!moveEntry.versionGroups) {
+                        moveEntry.versionGroups = new Set();
+                    }
+                    for (let [vg, _] of pkmnMoveEntry.vgLvls) {
+                        moveEntry.versionGroups.add(vg);
+                    }
+                    pkmnMoveEntry.move = moveEntry;
+                    if (!moveTypes[moveEntry.typeId]) {
+                        moveTypes[moveEntry.typeId] = 0;
+                    }
+                    moveTypes[moveEntry.typeId] += 1;
+                }
+                varietyEntry.moveTypes = moveTypes;
                 varietyEntry.species = speciesEntry;
                 this.varietyEntries.push(varietyEntry);
                 for (let formEntry of varietyEntry.forms) {
