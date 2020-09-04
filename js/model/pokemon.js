@@ -18,17 +18,17 @@ class StatListV2 {
 }
 
 class PokemonV2 {
-    constructor (species, variety, form, level, gender, nature, ivs, evs, ability, moves) {
+    constructor (species, variety, form, moves, ability ,level, gender, nature, ivs, evs) {
         this.species = species;
         this.variety = variety;
         this.form = form;
+        this.moves = moves;
+        this.ability = ability;
         this.level = level;
         this.gender = gender;
         this.nature = nature;
         this.ivs = ivs;
         this.evs = evs;
-        this.ability = ability;
-        this.moves = moves;
     }
 
     getStat (stat) {

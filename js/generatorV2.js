@@ -96,10 +96,6 @@ const MV_RANDOM = "mv_random";
  */
 const MV_PKMN_MOVES = "mv_pmkn_moves";
 /**
- * Random moves among the moves the pokemon can learn at its current level
- */
-const MV_PKMN_MOVES_LEVEL = "mv_pkmn_moves_level";
-/**
  * Random moves with the same type as the pokemon
  */
 const MV_PKMN_TYPE = "mv_pkmn_type";
@@ -310,6 +306,7 @@ class GeneratorV2 {
             species,
             variety,
             form,
+            moves,
             //...
         )
     }
@@ -408,6 +405,7 @@ class GeneratorV2 {
             let movePool = [];
             let pkmnTypeIds = variety.types.map(t => this._getTypeId(t.type));
             let pkmnMoves = varietyEntry.moves.filter(pm => this._validateVersionGroup(pm.vgLvls.map(([vg, _]) => vg)));
+            let pkmnMoveEntries = pkmnMoves.map(m => m.move);
 
             if (this.moveGM === MV_RANDOM) {
                 movePool = allMoves;
@@ -415,10 +413,8 @@ class GeneratorV2 {
                 movePool = this._getMovesWithTypes(allMoves, pkmnTypeIds);
             } else if (this.moveGM === MV_PKMN_TYPE_N) {
                 movePool = this._getMovesWithTypes(allMoves, [...pkmnTypeIds, NORMAL_TYPE_ID]);
-            } else if (this.moveGM === MV_PKMN_MOVES) {
-                movePool = pkmnMoves;
-            } else { //if (this.moveGM === MV_PKMN_MOVES_LEVEL) {
-                movePool = pkmnMoves.filter(pm => pm.vgLvls.some(([vg, lvl]) => vg === this.targetVersionGroup && lvl <= this.pokemonLevel));
+            } else { // if (this.moveGM === MV_PKMN_MOVES) {
+                movePool = pkmnMoveEntries;
             }
 
             let moveCount = Math.min(4, movePool.length);
@@ -521,7 +517,7 @@ class GeneratorV2 {
     }
 
     _getMovesWithTypes (moveEntries, typeIds) {
-        return moveEntries.filter(me => typeIds.includes(me.move.typeId));
+        return moveEntries.filter(me => typeIds.includes(me.typeId));
     }
 
     ///////////////////
