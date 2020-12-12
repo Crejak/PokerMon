@@ -1,3 +1,9 @@
+/**
+ * @var {Array<AbilityEntry>} _gl_abilityEntries
+ * @var {Array<speciesEntry>} _gl_speciesEntries
+ * @var {Array<MoveEntry>} _gl_moveEntries
+ */
+
 const MALE = "male";
 const FEMALE = "female";
 const GENDERLESS = "genderless"
@@ -6,6 +12,8 @@ const DEFAULT_LANGUAGE = "en";
 
 const NORMAL_TYPE = "normal";
 const NORMAL_TYPE_ID = Object.values(_gl_type).find(t => t.name === NORMAL_TYPE).id;
+
+const MIN_GENERATION_FOR_ABILITIES = 3;
 
 //////////////////////
 //  Pokémon generation
@@ -118,16 +126,20 @@ const MV_OPTIONS = [MV_RANDOM, MV_PKMN_MOVES, MV_PKMN_TYPE, MV_PKMN_TYPE_N, MV_M
  */
 const AB_RANDOM = "ab_random";
 /**
- * Random ability with some exceptions :
- * - Shedinja can only get Wonder Guard
+ * Random ability with exceptions of the signature abilities
+ * (i.e., Shedinja is guaranteed to have Wonder Guard)
  */
-const AB_RANDOM_EXCEPT = "ab_random_except";
+const AB_RANDOM_SIGN = "ab_random_except";
 /**
  * Random ability among the Pokémon's possible abilities
  */
 const AB_PKMN = "ab_pkmn";
+/**
+ * Random ability among the Pokémon's possible abilities, including its hidden abilities
+ */
+const AB_PKMN_HIDDEN = "ab_pkmn_hidden";
 
-const AB_OPTIONS = [AB_RANDOM, AB_RANDOM_EXCEPT, AB_PKMN]
+const AB_OPTIONS = [AB_RANDOM, AB_RANDOM_SIGN, AB_PKMN, AB_PKMN_HIDDEN]
 
 class GeneratorV2 {
     constructor (pokeApi) {
@@ -162,6 +174,7 @@ class GeneratorV2 {
         this.varietyEntries = [];
         this.formEntries = [];
         this.moveEntries = _gl_moveEntries;
+        this.abilityEntries = _gl_abilityEntries;
         this.types = _gl_type;
 
         // preprocess
@@ -302,11 +315,14 @@ class GeneratorV2 {
 
         let moves = await this._generateMoves(variety);
 
+        let ability = await this._generateAbility(variety);
+
         return new PokemonV2 (
             species,
             variety,
             form,
             moves,
+            ability,
             //...
         )
     }
@@ -404,8 +420,7 @@ class GeneratorV2 {
         if (this._mvFourFromPool()) {
             let movePool = [];
             let pkmnTypeIds = variety.types.map(t => this._getTypeId(t.type));
-            let pkmnMoves = varietyEntry.moves.filter(pm => this._validateVersionGroup(pm.vgLvls.map(([vg, _]) => vg)));
-            let pkmnMoveEntries = pkmnMoves.map(m => m.move);
+            let pkmnMoveEntries = this._getMoveEntriesFromVarietyEntry(varietyEntry);
 
             if (this.moveGM === MV_RANDOM) {
                 movePool = allMoves;
@@ -420,9 +435,12 @@ class GeneratorV2 {
             let moveCount = Math.min(4, movePool.length);
             moveEntries = Utils.chooseMultiple(movePool, moveCount);
         } else { //if (this.moveGM === MV_MOVES_TYPE) {
+            let pkmnMoveEntries = this._getMoveEntriesFromVarietyEntry(varietyEntry);
+            let moveTypes = this._getMoveTypesFromMoveEntries(pkmnMoveEntries);
             let moveCollection = {};
             let moveTypeWeightedPool = [];
-            for (let [typeId, weight] of Object.entries(varietyEntry.moveTypes)) {
+            for (let [typeIdKey, weight] of Object.entries(moveTypes)) {
+                let typeId = parseInt(typeIdKey);
                 moveCollection[typeId] = allMoves.filter(me => me.typeId === typeId);
                 moveTypeWeightedPool.push([typeId, weight]);
             }
@@ -442,6 +460,29 @@ class GeneratorV2 {
         }
 
         return moves;
+    }
+
+    async _generateAbility(variety) {
+        let targetGeneration = Math.max(this.targetGeneration, MIN_GENERATION_FOR_ABILITIES);
+        let ability;
+        let abilityPool = [];
+        let allAbilities = this.abilityEntries.filter(a => a.generationOrder <= this.targetGeneration);
+        let varietyEntry = this.varietyEntries.find(v => v.url === variety._url);
+        let pkmnAbilityEntries = varietyEntry.abilities;
+
+        if (this.abilityGM === AB_RANDOM) {
+            abilityPool = allAbilities;
+        } else if (this.abilityGM === AB_RANDOM_SIGN) {
+            //let signatureAbilityEntry = 
+        } else if (this.abilityGM === AB_PKMN) {
+            abilityPool = varietyEntry.abilities;
+        } else { //if (this.abilityGM === AB_PKMN_HIDDEN) {
+
+        }
+
+        let abilityEntry = Utils.choose(abilityPool);
+        ability = await this.pokeApi.get(abilityEntry);
+        return ability;
     }
 
     /////////////////////////
@@ -468,7 +509,7 @@ class GeneratorV2 {
     }
 
     _mvFourFromPool () {
-        return this.moveGM === MV_RANDOM || this.moveGM === MV_PKMN_MOVES || this.moveGM === MV_PKMN_MOVES_LEVEL
+        return this.moveGM === MV_RANDOM || this.moveGM === MV_PKMN_MOVES
             || this.moveGM === MV_PKMN_TYPE || this.moveGM === MV_PKMN_TYPE_N;
     }
 
@@ -520,13 +561,28 @@ class GeneratorV2 {
         return moveEntries.filter(me => typeIds.includes(me.typeId));
     }
 
+    _getMoveTypesFromMoveEntries (moveEntries) {
+        let moveTypes = {};
+        for (let moveEntry of moveEntries) {
+            if (!moveTypes[moveEntry.typeId]) {
+                moveTypes[moveEntry.typeId] = 0;
+            }
+            moveTypes[moveEntry.typeId] += 1;
+        }
+        return moveTypes;
+    }
+
+    _getMoveEntriesFromVarietyEntry (varietyEntry) {
+        let pkmnMoves = varietyEntry.moves.filter(pm => this._validateVersionGroup(pm.vgLvls.map(([vg, _]) => vg)));
+        return pkmnMoves.map(m => m.move);
+    }
+
     ///////////////////
     //  Preprocess data
 
     _computeEntries () {
         for (let speciesEntry of this.speciesEntries) {
             for (let varietyEntry of speciesEntry.varieties) {
-                let moveTypes = {};
                 for (let pkmnMoveEntry of varietyEntry.moves) {
                     let moveEntry = this.moveEntries[pkmnMoveEntry.index];
                     if (!moveEntry.versionGroups) {
@@ -536,12 +592,12 @@ class GeneratorV2 {
                         moveEntry.versionGroups.add(vg);
                     }
                     pkmnMoveEntry.move = moveEntry;
-                    if (!moveTypes[moveEntry.typeId]) {
-                        moveTypes[moveEntry.typeId] = 0;
-                    }
-                    moveTypes[moveEntry.typeId] += 1;
                 }
-                varietyEntry.moveTypes = moveTypes;
+                varietyEntry.abilities = [];
+                for (let abIndex of varietyEntry.abs) {
+                    let abilityEntry = this.abilityEntries[abIndex];
+                    varietyEntry.abilities.push(abilityEntry);
+                }
                 varietyEntry.species = speciesEntry;
                 this.varietyEntries.push(varietyEntry);
                 for (let formEntry of varietyEntry.forms) {
