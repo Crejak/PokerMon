@@ -4,10 +4,6 @@
  * @var {Array<MoveEntry>} _gl_moveEntries
  */
 
-const MALE = "male";
-const FEMALE = "female";
-const GENDERLESS = "genderless"
-
 const DEFAULT_LANGUAGE = "en";
 
 const NORMAL_TYPE = "normal";
@@ -92,6 +88,11 @@ const EV_ZERO = "ev_zero";
 
 const EV_OPTIONS = [EV_RANDOM, EV_TRUE_RANDOM, EV_RANDOM_MAX, EV_TRUE_RANDOM_MAX, EV_ZERO];
 
+const EV_MAX = 508;
+const EV_TRUE_MAX = 510;
+const EV_STAT_CAP = 252;
+const EV_STEP = 4;
+
 ///////////////////
 //  Move generation
 
@@ -152,7 +153,7 @@ class GeneratorV2 {
         this.ivGM = IV_OPTIONS[0];
         this.evGM = EV_OPTIONS[0];
         this.moveGM = MV_OPTIONS[0];
-        this.abilityGM = MV_OPTIONS[0];
+        this.abilityGM = AB_OPTIONS[0];
         
         this.allowedGenerations = Utils.clone(_gl_generation);
         this.allowedVersionGroups = Utils.clone(_gl_version_group);
@@ -176,6 +177,7 @@ class GeneratorV2 {
         this.moveEntries = _gl_moveEntries;
         this.abilityEntries = _gl_abilityEntries;
         this.types = _gl_type;
+        this.natures = _gl_nature;
 
         // preprocess
         this._computeEntries();
@@ -317,14 +319,26 @@ class GeneratorV2 {
 
         let ability = await this._generateAbility(variety);
 
+        let gender = this._generateGender(species);
+
+        let nature = this._generateNature();
+
+        let ivs = this._generateIvs();
+
+        let evs = this._generateEvs();
+
         return new PokemonV2 (
             species,
             variety,
             form,
             moves,
             ability,
-            //...
-        )
+            this.pokemonLevel,
+            gender,
+            nature,
+            ivs,
+            evs
+        );
     }
 
     /////////////////////
@@ -463,26 +477,99 @@ class GeneratorV2 {
     }
 
     async _generateAbility(variety) {
-        let targetGeneration = Math.max(this.targetGeneration, MIN_GENERATION_FOR_ABILITIES);
+        let targetGenerationOrder = Math.max(
+            this.allowedGenerations[this.targetGeneration].id, 
+            MIN_GENERATION_FOR_ABILITIES);
         let ability;
         let abilityPool = [];
-        let allAbilities = this.abilityEntries.filter(a => a.generationOrder <= this.targetGeneration);
+        let allAbilities = this.abilityEntries.filter(a => a.generationOrder <= targetGenerationOrder);
         let varietyEntry = this.varietyEntries.find(v => v.url === variety._url);
         let pkmnAbilityEntries = varietyEntry.abilities;
 
         if (this.abilityGM === AB_RANDOM) {
             abilityPool = allAbilities;
         } else if (this.abilityGM === AB_RANDOM_SIGN) {
-            //let signatureAbilityEntry = 
+            throw "Ability generation method not implemented : AB_RANDOM_SIGN";
         } else if (this.abilityGM === AB_PKMN) {
-            abilityPool = varietyEntry.abilities;
+            abilityPool = pkmnAbilityEntries;
         } else { //if (this.abilityGM === AB_PKMN_HIDDEN) {
-
+            throw "Ability generation method not implemented : AB_PKMN_HIDDEN";
         }
 
         let abilityEntry = Utils.choose(abilityPool);
         ability = await this.pokeApi.get(abilityEntry);
         return ability;
+    }
+
+    _generateGender(species) {
+        if (species.gender_rate === -1) {
+            return GENDERLESS;
+        }
+
+        let femaleOdd = species.gender_rate / 8;
+        let isFemale = Math.random() < femaleOdd;
+
+        return isFemale ? FEMALE : MALE;
+    }
+
+    _generateNature() {
+        return Utils.choose(Object.values(this.natures));
+    }
+
+    _generateIvs () {
+        if (this.ivGM === IV_MAX) {
+            return StatListV2.MaxIvs();
+        }
+        if (this.ivGM === IV_ZERO) {
+            return StatListV2.Zero();
+        }
+        if (this.ivGM === IV_RANDOM) {
+            return new StatListV2(
+                Utils.randInt(32),
+                Utils.randInt(32),
+                Utils.randInt(32),
+                Utils.randInt(32),
+                Utils.randInt(32),
+                Utils.randInt(32)
+            );
+        }
+        throw "Invalid method for IV generation : " + this.ivGM;
+    }
+    
+    _generateEvs () {
+        if (this.evGM === EV_ZERO) {
+            return StatListV2.Zero();
+        }
+        if (this.evGM === EV_RANDOM || this.evGM === EV_RANDOM_MAX ||
+            this.evGM === EV_TRUE_RANDOM || this.evGM === EV_TRUE_RANDOM_MAX) {
+            let evs = StatListV2.Zero();
+            let pool, step;
+            if (this.evGM === EV_RANDOM) {
+                pool = Utils.randInt(EV_MAX + 1);
+                step = EV_STEP;
+            } else if (this.evGM === EV_RANDOM_MAX) {
+                pool = EV_MAX;
+                step = EV_STEP;
+            }
+            if (this.evGM === EV_TRUE_RANDOM) {
+                pool = Utils.randInt(EV_TRUE_MAX + 1);
+                step = 1;
+            } else {
+                pool = EV_TRUE_MAX;
+                step = 1;
+            }
+            let choices = ["hp", "atk", "def", "spA", "spD", "spe"];
+            while (pool > 0) {
+                let stat = Utils.choose(choices);
+                evs[stat] += step;
+                pool -= step;
+                if (evs[stat] >= EV_STAT_CAP) {
+                    choices.splice(choices.indexOf(stat), 1);
+                }
+            }
+            return evs;
+        }
+        throw "Invalid method for EV generation : " + this.evGM;
     }
 
     /////////////////////////

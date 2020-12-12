@@ -9,16 +9,20 @@ class StatListV2 {
     }
 
     static MaxIvs () {
-        return new StatList(31, 31, 31, 31, 31, 31);
+        return new StatListV2(31, 31, 31, 31, 31, 31);
     }
 
     static Zero () {
-        return new StatList(0, 0, 0, 0, 0, 0);
+        return new StatListV2(0, 0, 0, 0, 0, 0);
     }
 }
 
+const MALE = "male";
+const FEMALE = "female";
+const GENDERLESS = "genderless";
+
 class PokemonV2 {
-    constructor (species, variety, form, moves, ability ,level, gender, nature, ivs, evs) {
+    constructor (species, variety, form, moves, ability, level, gender, nature, ivs, evs) {
         this.species = species;
         this.variety = variety;
         this.form = form;
