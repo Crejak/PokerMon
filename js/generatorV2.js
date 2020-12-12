@@ -556,6 +556,14 @@ class GeneratorV2 {
             return GENDERLESS;
         }
 
+        if (species.gender_rate === 8) {
+            return FEMALE;
+        }
+
+        if (species.gender_rate === 0) {
+            return MALE;
+        }
+
         let femaleOdd = species.gender_rate / 8;
         let isFemale = Math.random() < femaleOdd;
 
