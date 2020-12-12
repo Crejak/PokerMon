@@ -99,6 +99,7 @@ const AB_RANDOM_EXCEPT = "ab_random_except";
 const AB_PKMN = "ab_pkmn";
 
 
+
 const EV_MAX = 508;
 const EV_TRUE_MAX = 510;
 const EV_STAT_CAP = 252;

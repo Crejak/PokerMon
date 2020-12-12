@@ -22,7 +22,7 @@ const FEMALE = "female";
 const GENDERLESS = "genderless";
 
 class PokemonV2 {
-    constructor (species, variety, form, moves, ability, level, gender, nature, ivs, evs) {
+    constructor (species, variety, form, moves, ability, level, gender, nature, ivs, evs, happiness, shininess) {
         this.species = species;
         this.variety = variety;
         this.form = form;
@@ -33,6 +33,8 @@ class PokemonV2 {
         this.nature = nature;
         this.ivs = ivs;
         this.evs = evs;
+        this.happiness = happiness;
+        this.shininess = shininess ?? false;
     }
 
     getStat (stat) {

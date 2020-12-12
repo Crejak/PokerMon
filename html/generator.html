@@ -6,7 +6,165 @@
     <title>PokerMon - Random Pokémon Generator</title>
 </head>
 <body>
-    
+    <form class="js-settingsForm">
+        <label for="pokemonGM">Pokemon</label>
+        <select name="pokemonGM">
+            <option value="pk_species">Random species, default variety, default form</option>
+            <option value="pk_species_pkmn">Random species, random variety, default form</option>
+            <option value="pk_species_pkmn_form">Random species, random variety, random form</option>
+            <option value="pk_pkmn">Random variety, default form</option>
+            <option value="pk_pkmn_form">Random variety, random form</option>
+            <option value="pk_form">Random form</option>
+        </select>
+        <br>
+        <label for="moveGM">Moves</label>
+        <select name="moveGM">
+            <option value="mv_random">Random moves</option>
+            <option value="mv_pmkn_moves">Random moves among the moves the pokemon can learn</option>
+            <option value="mv_pkmn_type">Random moves with the same type as the pokemon</option>
+            <option value="mv_pkmn_type_n">Random moves with the same type as the pokemon, plus the normal type</option>
+            <option value="mv_moves_type">Random moves with the same type as the moves the pokemon can learn</option>
+        </select>
+        <br>
+        <label for="abilityGM">Ability</label>
+        <select name="abilityGM">
+            <option value="ab_random">Random ability</option>
+            <option value="ab_random_except" disabled>Random ability with exceptions of the signature abilities</option>
+            <option value="ab_pkmn">Random ability among the Pokémon's possible abilities</option>
+            <option value="ab_pkmn_hidden" disabled>Random ability among the Pokémon's possible abilities, including its hidden abilities</option>
+        </select>
+        <br>
+        <label for="evGM">EVs</label>
+        <select name="evGM">
+            <option value="ev_random">Random EVs for each stat, only multiples of 4, with a total between 0 and 508</option>
+            <option value="ev_true_random">Random EVs for each stat, with a total between 0 and 510</option>
+            <option value="ev_random_max">Random EVs for each stat, only multiples of 4, with a total of exactly 508</option>
+            <option value="ev_true_random_max">Random EVs for each stat, with a total of exactly 510</option>
+            <option value="ev_zero">Zero EV for each stat</option>
+        </select>
+        <br>
+        <label for="ivGM">IVs</label>
+        <select name="ivGM">
+            <option value="iv_max">Max IV for each stat (31)</option>
+            <option value="iv_random">Random IV for each stat (0-31)</option>
+            <option value="iv_zero">Zero IV for each stat</option>
+        </select>
+        <br>
+        <label for="happinessGM">Happiness</label>
+        <select name="happinessGM">
+            <option value="ha_max">Maximum happiness (255)</option>
+            <option value="ha_random">Random happiness between 0 and 255</option>
+            <option value="ha_min">Minimum happiness (0)</option>
+        </select>
+        <br>
+        <label for="level">Level</label>
+        <input name="level" type="number" min="1" max="100" step="1" value="50" /> 
+        <fieldset>
+            <legend>Game version</legend>
+            <label for="targetGeneration">Generation</label>
+            <select name="targetGeneration" class="js-generation">
+                <option value="1">Generation I</option>
+                <option value="2">Generation II</option>
+                <option value="3">Generation III</option>
+                <option value="4">Generation IV</option>
+                <option value="5">Generation V</option>
+                <option value="6">Generation VI</option>
+                <option value="7">Generation VII</option>
+                <option value="8" disabled>Generation VIII</option>
+            </select>
+            <br>
+            <label for="targetVersionGroup">Version group</label>
+            <select name="targetVersionGroup" class="js-versionGroup">
+                <optgroup label="Generation I">
+                    <option value="1">Red / Blue</option>
+                    <option value="2">Yellow</option>
+                </optgroup>
+                <optgroup label="Generation II">
+                    <option value="3">Gold / Sliver</option>
+                    <option value="4">Crystal</option>
+                </optgroup>
+                <optgroup label="Generation III">
+                    <option value="5">Ruby / Sapphire</option>
+                    <option value="6">Emerald</option>
+                    <option value="12">Colosseum</option>
+                    <option value="13">XD</option>
+                    <option value="7">Fire Red / Leaf Green</option>
+                </optgroup>
+                <optgroup label="Generation IV">
+                    <option value="8">Diamond / Perl</option>
+                    <option value="9">Platinum</option>
+                    <option value="10">Heartgold / Soulsilver</option>
+                </optgroup>
+                <optgroup label="Generation V">
+                    <option value="11">Black / White</option>
+                    <option value="14">Black 2 / White 2</option>
+                </optgroup>
+                <optgroup label="Generation VI">
+                    <option value="15">X / Y</option>
+                    <option value="16">Omega Ruby / Alpha Sapphire</option>
+                </optgroup>
+                <optgroup label="Generation VII">
+                    <option value="17">Sun / Moon</option>
+                    <option value="18">Ultra Sun / Ultra Moon</option>
+                </optgroup>
+            </select>
+            <br>
+            <label for="targetVersion">Version</label>
+            <select name="targetVersion" class="js-version">
+                <optgroup label="Generation I">
+                    <option value="1">Red</option>
+                    <option value="2">Blue</option>
+                    <option value="3">Yellow</option>
+                </optgroup>
+                <optgroup label="Generation II">
+                    <option value="4">Gold</option>
+                    <option value="5">Silver</option>
+                    <option value="6">Crystal</option>
+                </optgroup>
+                <optgroup label="Generation III">
+                    <option value="7">Ruby</option>
+                    <option value="8">Sapphire</option>
+                    <option value="9">Emerald</option>
+                    <option value="19">Colosseum</option>
+                    <option value="20">XD</option>
+                    <option value="10">Fire Red</option>
+                    <option value="11">Leaf Green</option>
+                </optgroup>
+                <optgroup label="Generation IV">
+                    <option value="12">Diamond</option>
+                    <option value="13">Pearl</option>
+                    <option value="14">Platinum</option>
+                    <option value="15">HeartGold</option>
+                    <option value="16">SoulSilver</option>
+                </optgroup>
+                <optgroup label="Generation V">
+                    <option value="17">Black</option>
+                    <option value="18">White</option>
+                    <option value="21">Black 2</option>
+                    <option value="22">White 2</option>
+                </optgroup>
+                <optgroup label="Generation VI">
+                    <option value="23">X</option>
+                    <option value="24">Y</option>
+                    <option value="25">Omega Ruby</option>
+                    <option value="26">Alpha Sapphire</option>
+                </optgroup>
+                <optgroup label="Generation VII">
+                    <option value="27">Sun</option>
+                    <option value="28">Moon</option>
+                    <option value="29">Ultra Sun</option>
+                    <option value="30">Ultra Moon</option>
+                </optgroup>
+            </select>
+        </fieldset>
+        <input type="submit" value="Generate">
+    </form>
+    <fieldset>
+        <legend>Generated pokemon</legend>
+        <div class="js-generatedPokemon">
+
+        </div>
+    </fieldset>
 </body>
 <script src="../js/utils.js"></script>
 <script src="../js/data/index.js"></script>
@@ -23,4 +181,6 @@
 <script src="../js/pokeApiClientV2.js"></script>
 <script src="../js/model/pokemon.js"></script>
 <script src="../js/generatorV2.js"></script>
+<script src="../js/formatter.js"></script>
+<script src="../js/bindings/generatorBindings.js"></script>
 </html>

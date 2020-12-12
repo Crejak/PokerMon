@@ -11,6 +11,10 @@ const NORMAL_TYPE_ID = Object.values(_gl_type).find(t => t.name === NORMAL_TYPE)
 
 const MIN_GENERATION_FOR_ABILITIES = 3;
 
+const OLD_SHININESS_RATE = 8192;
+const NEW_SHININESS_RATE = 4096;
+const NEW_SHININESS_GENERATION = 4;
+
 //////////////////////
 //  Pokémon generation
 
@@ -82,7 +86,7 @@ const EV_RANDOM_MAX = "ev_random_max";
  */
 const EV_TRUE_RANDOM_MAX = "ev_true_random_max";
 /**
- * Zero IV for each stat
+ * Zero EV for each stat
  */
 const EV_ZERO = "ev_zero";
 
@@ -142,6 +146,26 @@ const AB_PKMN_HIDDEN = "ab_pkmn_hidden";
 
 const AB_OPTIONS = [AB_RANDOM, AB_RANDOM_SIGN, AB_PKMN, AB_PKMN_HIDDEN]
 
+////////////////////////
+//  Happiness generation
+
+/**
+ * Maximum happiness (255)
+ */
+const HA_MAX = "ha_max";
+/**
+ * Random happiness between 0 and 255
+ */
+const HA_RANDOM = "ha_random";
+/**
+ * Minimum happiness (0)
+ */
+const HA_MIN = "ha_min";
+
+const HA_OPTIONS = [HA_MAX, HA_RANDOM, HA_MIN];
+
+const HA_MAX_VALUE = 255;
+
 class GeneratorV2 {
     constructor (pokeApi) {
         /**
@@ -154,6 +178,7 @@ class GeneratorV2 {
         this.evGM = EV_OPTIONS[0];
         this.moveGM = MV_OPTIONS[0];
         this.abilityGM = AB_OPTIONS[0];
+        this.happinessGM = HA_OPTIONS[0];
         
         this.allowedGenerations = Utils.clone(_gl_generation);
         this.allowedVersionGroups = Utils.clone(_gl_version_group);
@@ -202,23 +227,30 @@ class GeneratorV2 {
     
     setEvGenerationMethod (evGM) {
         if (!EV_OPTIONS.includes(evGM)) {
-            throw "Invalid IV generation method : " + evGM;
+            throw "Invalid EV generation method : " + evGM;
         }
         this.evGM = evGM;
     }
     
     setMoveGenerationMethod (moveGM) {
         if (!MV_OPTIONS.includes(moveGM)) {
-            throw "Invalid IV generation method : " + moveGM;
+            throw "Invalid move generation method : " + moveGM;
         }
         this.moveGM = moveGM;
     }
     
     setAbilityGenerationMethod (abilityGM) {
         if (!AB_OPTIONS.includes(abilityGM)) {
-            throw "Invalid IV generation method : " + abilityGM;
+            throw "Invalid ability generation method : " + abilityGM;
         }
         this.abilityGM = abilityGM;
+    }
+    
+    setHappinessGenerationMethod (happinessGM) {
+        if (!HA_OPTIONS.includes(happinessGM)) {
+            throw "Invalid happiness generation method : " + happinessGM;
+        }
+        this.happinessGM = happinessGM;
     }
 
     setTargetGeneration (targetGeneration) {
@@ -312,6 +344,18 @@ class GeneratorV2 {
     //////////////////
     //  Public methods
 
+    getTargetGeneration () {
+        return this.allowedGenerations[this.targetGeneration];
+    }
+
+    getTargetVersionGroup () {
+        return this.allowedVersionGroups[this.targetVersionGroup];
+    }
+
+    getTargetVersion () {
+        return this.allowedVersions[this.targetVersion];
+    }
+
     async generate () {
         let [species, variety, form] = await this._generatePokemon();
 
@@ -327,6 +371,10 @@ class GeneratorV2 {
 
         let evs = this._generateEvs();
 
+        let happiness = this._generateHappiness();
+
+        let shininess = this._generateShininess();
+
         return new PokemonV2 (
             species,
             variety,
@@ -337,7 +385,9 @@ class GeneratorV2 {
             gender,
             nature,
             ivs,
-            evs
+            evs,
+            happiness,
+            shininess
         );
     }
 
@@ -570,6 +620,24 @@ class GeneratorV2 {
             return evs;
         }
         throw "Invalid method for EV generation : " + this.evGM;
+    }
+
+    _generateHappiness () {
+        if (this.happinessGM === HA_MAX) {
+            return 255;
+        }
+        if (this.happinessGM === HA_MIN) {
+            return 0;
+        }
+        // this.happinessGM === HA_RANDOM
+        return Utils.randInt(HA_MAX_VALUE + 1);
+    }
+
+    _generateShininess () {
+        var rate = this.allowedGenerations[this.targetGeneration].id < NEW_SHININESS_GENERATION
+            ? OLD_SHININESS_RATE
+            : NEW_SHININESS_RATE;
+        return Utils.randInt(rate) === 0;
     }
 
     /////////////////////////
