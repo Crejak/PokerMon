@@ -32,7 +32,7 @@ class Formatter {
         }), '');
 
         return this._format(SHOWDOWN_TEMPLATE, {
-            name: this._capitalize(pokemon.species.name),
+            name: this._capitalize(pokemon.variety.name),
             gender: this._formatGender(pokemon.gender),
             shiny: this._formatShiny(pokemon.shininess),
             ability: this._capitalize(pokemon.ability.name),
