@@ -22,8 +22,6 @@ _gl_settingsForm.addEventListener("submit", async event => {
 
     let pokemon = await _gl_generator.generate();
 
-    console.log(Formatter.getShowdownString(pokemon));
-    console.log(Formatter.getShowdownHtml(pokemon));
     _gl_pokemonDiv.innerHTML = Formatter.getShowdownHtml(pokemon);
 });
 
