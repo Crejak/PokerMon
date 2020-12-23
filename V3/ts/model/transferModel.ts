@@ -51,7 +51,7 @@ export interface Type {
     m: MoveId[];
 }
 
-export interface Data {
+export interface TransferDataObject {
     g: Generation[];
     t: Type[];
 }

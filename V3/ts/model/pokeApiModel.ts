@@ -24,9 +24,23 @@ export interface APIResource<T extends Resource> {
     url: Url;
 }
 
+export interface APIResourceList<T extends Resource> {
+    count: number;
+    next?: Url;
+    previous?: Url;
+    results: APIResource<T>[];
+}
+
 export interface NamedAPIResource<T extends NamedResource> extends APIResource<T> {
     name: ResourceName;
     url: Url;
+}
+
+export interface NamedAPIResourceList<T extends NamedResource> extends APIResourceList<T> {
+    count: number;
+    next?: Url;
+    previous?: Url;
+    results: NamedAPIResource<T>[];
 }
 
 export interface Language extends NamedResource {

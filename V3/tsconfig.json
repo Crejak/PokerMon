@@ -1,7 +1,8 @@
 {
     "compilerOptions": {
+        "module": "AMD",
         "target": "ES6",
-        "outDir": "js"
+        "outDir": "dist/js"
     },
     "include": ["ts/*/*.ts"]
 }
