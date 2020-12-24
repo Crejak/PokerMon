@@ -1,0 +1,6 @@
+{
+    "scripts": {
+        "build": "esbuild ./ts/bundle.ts --bundle --outfile=./dist/js/bundle.js",
+        "start": "esbuild ./ts/bundle.ts --bundle --outfile=./dist/js/bundle.js --serve"
+    }
+}

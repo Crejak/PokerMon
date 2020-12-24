@@ -22,6 +22,7 @@ export class PokeApiClient {
 
     constructor() {
         this.resourceCache = new Map<PokeApi.Url, PokeApi.Resource>();
+        this.resourceListCache = new Map<string, PokeApi.APIResourceList<PokeApi.NamedResource>>();
     }
 
     async get<T extends PokeApi.Resource>(apiResource: PokeApi.APIResource<T>) : Promise<T> {
