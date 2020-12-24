@@ -101,8 +101,13 @@ export class PokeApiClient {
         return url as PokeApi.Url;
     }
 
-    private async call(url: PokeApi.Url): Promise<any> {
-        let response = await fetch(new Request(url));
+    private async call(url: PokeApi.Url, params?: any): Promise<any> {
+        let urlObject = new URL(url);
+        if (!!params) {
+            urlObject.search = new URLSearchParams(params).toString();
+        }
+
+        let response = await fetch(urlObject.toString());
         let json = await response.json();
 
         return json;
@@ -125,7 +130,12 @@ export class PokeApiClient {
             return this.resourceListCache.get(url);
         }
 
-        var list = await this.call(url) as PokeApi.APIResourceList<T>;
+        let preview = await this.call(url) as PokeApi.APIResourceList<T>;
+        let count = preview.count;
+
+        let list = await this.call(url, {
+            limit: count
+        });
 
         this.resourceListCache.set(url, list);
 
