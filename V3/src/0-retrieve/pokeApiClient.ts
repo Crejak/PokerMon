@@ -1,4 +1,5 @@
 import * as PokeApi from "../model/pokeApiModel";
+import { httpGet } from "../utils/httpUtils";
 
 const BASE_URL: string = "https://pokeapi.co/api/v2/";
 const ENDPOINTS = {
@@ -16,11 +17,21 @@ const ENDPOINTS = {
     evolutionChain: "evolution-chain"
 }
 
+export interface PokeApiClientOptions {
+    logging: boolean;
+}
+
+const DEFAULT_OPTIONS: PokeApiClientOptions = {
+    logging: false
+};
+
 export class PokeApiClient {
+    options: PokeApiClientOptions;
     resourceCache: Map<PokeApi.Url, PokeApi.Resource>;
     resourceListCache: Map<string, PokeApi.APIResourceList<PokeApi.NamedResource>>;
 
-    constructor() {
+    constructor(options?: PokeApiClientOptions) {
+        this.options = Object.assign({}, DEFAULT_OPTIONS, options);
         this.resourceCache = new Map<PokeApi.Url, PokeApi.Resource>();
         this.resourceListCache = new Map<string, PokeApi.APIResourceList<PokeApi.NamedResource>>();
     }
@@ -87,24 +98,12 @@ export class PokeApiClient {
 
     //#region méthodes privées
 
-    private processUrl(url: string) : PokeApi.Url {
-        if (url.endsWith("/")) {
-            url = url.substring(0, url.length - 1);
-        }
 
-        return url as PokeApi.Url;
-    }
-
-    private async call(url: PokeApi.Url, params?: any): Promise<any> {
-        let urlObject = new URL(this.processUrl(url));
-        if (!!params) {
-            urlObject.search = new URLSearchParams(params).toString();
-        }
-
-        let response = await fetch(urlObject.toString());
-        let json = await response.json();
-
-        return json;
+    private async call(url: PokeApi.Url, params?: object): Promise<object> {
+        return httpGet(url, {
+            params: params,
+            logging: this.options.logging
+        });
     }
 
     private async fetchResource(url: PokeApi.Url): Promise<PokeApi.Resource> {
@@ -129,11 +128,19 @@ export class PokeApiClient {
 
         let list = await this.call(url, {
             limit: count
-        });
+        }) as PokeApi.APIResourceList<T>;
 
         this.resourceListCache.set(url, list);
 
         return list;
+    }
+
+    private log(text: string) {
+        if (!this.options.logging) {
+            return;
+        }
+
+        console.info(text);
     }
 
     //#endregion

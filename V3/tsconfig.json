@@ -1,8 +1,14 @@
 {
     "compilerOptions": {
-        "module": "ES6",
+        "moduleResolution": "Node",
+        "module": "CommonJS",
         "target": "ES6",
-        "outDir": "dist/js"
+        "outDir": "dist/js",
+        "typeRoots": [
+            "./node_modules/@types"
+        ],
     },
-    "include": ["src/bundle.ts"]
+    "include": [
+        "src/**/*.ts"
+    ]
 }
