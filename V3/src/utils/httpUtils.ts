@@ -1,7 +1,8 @@
 import { env, isBrowser, isNode } from "./envUtils";
 
 // Node imports
-import * as nodeHttps from 'https';
+const nodeHttps = isNode ? require('https') : undefined;
+// import * as nodeHttps from 'https';
 
 export interface HttpGetterOptions {
     logging?: boolean,

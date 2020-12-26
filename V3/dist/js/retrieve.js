@@ -79,7 +79,7 @@ async function nodeHttpGet(url, options) {
         responseText += data;
       });
       res.on("error", (error) => {
-        console.error("Error 1 !");
+        console.error("============== Error message : " + error.message);
         console.error(error);
         reject(error);
       });
@@ -96,6 +96,7 @@ async function nodeHttpGet(url, options) {
       });
     }).on("error", (error) => {
       console.error("============== Error request : " + error.message);
+      console.error(error);
       reject(error);
     });
   });
