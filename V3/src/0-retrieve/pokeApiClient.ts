@@ -30,7 +30,7 @@ export class PokeApiClient {
     }
 
     async getList<T extends PokeApi.Resource>(endpoint: string) : Promise<PokeApi.APIResourceList<T>> {
-        return await this.fetchResourceList(this.url(endpoint)) as PokeApi.APIResourceList<T>;
+        return await this.fetchResourceList(BASE_URL + endpoint) as PokeApi.APIResourceList<T>;
     }
 
     //#region resource lists
@@ -87,22 +87,16 @@ export class PokeApiClient {
 
     //#region méthodes privées
 
-    private url(endpoint: string, id?: PokeApi.Identifier | string) : PokeApi.Url {
-        if (!endpoint.endsWith("/")) {
-            endpoint += "/";
+    private processUrl(url: string) : PokeApi.Url {
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length - 1);
         }
-        if (!id) {
-            id = "";
-        }
-        let url = BASE_URL + endpoint + id;
-        if (!url.endsWith("/")) {
-            url += "/";
-        }
+
         return url as PokeApi.Url;
     }
 
     private async call(url: PokeApi.Url, params?: any): Promise<any> {
-        let urlObject = new URL(url);
+        let urlObject = new URL(this.processUrl(url));
         if (!!params) {
             urlObject.search = new URLSearchParams(params).toString();
         }

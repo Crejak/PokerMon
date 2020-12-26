@@ -4,5 +4,5 @@
         "target": "ES6",
         "outDir": "dist/js"
     },
-    "include": ["ts/bundle.ts"]
+    "include": ["src/bundle.ts"]
 }
