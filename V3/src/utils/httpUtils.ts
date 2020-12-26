@@ -4,6 +4,10 @@ import { env, isBrowser, isNode } from "./envUtils";
 const nodeHttps = isNode ? require('https') : undefined;
 // import * as nodeHttps from 'https';
 
+if (isNode) {
+    nodeHttps.globalAgent.maxSockets = 20;
+}
+
 export interface HttpGetterOptions {
     logging?: boolean,
     params?: object
@@ -17,13 +21,19 @@ const DEFAULT_OPTIONS: HttpGetterOptions = {
 export async function httpGet(url: string, options?: HttpGetterOptions): Promise<object> {
     options = Object.assign({}, DEFAULT_OPTIONS, options);
     
-    let urlObject = new URL(processUrl(url));
+    let urlObject = new URL(url);
     if (!!options.params) {
         urlObject.search = new URLSearchParams(options.params as URLSearchParams).toString();
     }
 
     if (isNode) {
-        return nodeHttpGet(urlObject.toString(), options);
+        return new Promise<object>((resolve, reject) => {
+            nodeHttpGet(urlObject.toString(), options).then(resolve, (error) => {
+                console.error('============== Error node');
+                console.error(error);
+                reject(error);
+            });
+        })
     } else if (isBrowser) {
         return browserHttpGet(urlObject.toString(), options);
     }
@@ -81,12 +91,4 @@ async function nodeHttpGet(url: string, options: HttpGetterOptions): Promise<obj
             reject(error);
         });
     })
-}
-
-function processUrl(url: string): string {
-    if (url.endsWith("/")) {
-        url = url.substring(0, url.length - 1);
-    }
-
-    return url;
 }

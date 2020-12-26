@@ -39,7 +39,10 @@ var isBrowser = env === 1;
 var isNode = env === 0;
 
 // src/utils/httpUtils.ts
-var nodeHttps = __toModule(require("https"));
+var nodeHttps = isNode ? require("https") : void 0;
+if (isNode) {
+  nodeHttps.globalAgent.maxSockets = 15;
+}
 var DEFAULT_OPTIONS = {
   logging: false,
   params: void 0
@@ -51,7 +54,15 @@ async function httpGet(url, options) {
     urlObject.search = new URLSearchParams(options.params).toString();
   }
   if (isNode) {
-    return nodeHttpGet(urlObject.toString(), options);
+    return new Promise((resolve, reject) => {
+      nodeHttpGet(urlObject.toString(), options).then((value) => {
+        resolve(value);
+      }, (error) => {
+        console.error("============== Error final : " + error.message);
+        console.error(error);
+        reject(error);
+      });
+    });
   } else if (isBrowser) {
     return browserHttpGet(urlObject.toString(), options);
   }
@@ -102,9 +113,6 @@ async function nodeHttpGet(url, options) {
   });
 }
 function processUrl(url) {
-  if (url.endsWith("/")) {
-    url = url.substring(0, url.length - 1);
-  }
   return url;
 }
 
