@@ -18,7 +18,7 @@ const ENDPOINTS = {
 }
 
 export interface PokeApiClientOptions {
-    logging: boolean;
+    logging?: boolean;
 }
 
 const DEFAULT_OPTIONS: PokeApiClientOptions = {

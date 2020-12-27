@@ -5,10 +5,11 @@ import * as PokeApi from "../model/pokeApiModel";
 export class DataRetriever {
     pokeApiClient: PokeApiClient;
     rawDataModel: RawDataObject;
-    retrievingPromise: Promise<PokeApi.APIResourceList<PokeApi.Resource>>;
+    retrievingPromise: Promise<RawDataObject>;
 
     constructor(pokeApiClient: PokeApiClient) {
         this.pokeApiClient = pokeApiClient;
+        this.retrievingPromise = null;
         this.rawDataModel = {
             generations: [],
             versionGroups: [],
@@ -26,33 +27,46 @@ export class DataRetriever {
     }
 
     async retrieve(): Promise<RawDataObject> {
-        let generations = this.retrieveFromListFunction(this.pokeApiClient.getGenerationList);
-        let versionGroups = this.retrieveFromListFunction(this.pokeApiClient.getVersionGroupList);
-        let versions = this.retrieveFromListFunction(this.pokeApiClient.getVersionList);
-        let evolutionChains = this.retrieveFromListFunction(this.pokeApiClient.getEvolutionChainList);
-        let species = this.retrieveFromListFunction(this.pokeApiClient.getPokemonSpeciesList);
-        let varieties = this.retrieveFromListFunction(this.pokeApiClient.getPokemonList);
-        let forms = this.retrieveFromListFunction(this.pokeApiClient.getPokemonFormList);
-        let abilities = this.retrieveFromListFunction(this.pokeApiClient.getAbilityList);
-        let moves = this.retrieveFromListFunction(this.pokeApiClient.getMoveList);
-        let natures = this.retrieveFromListFunction(this.pokeApiClient.getNatureList);
-        let stats = this.retrieveFromListFunction(this.pokeApiClient.getStatList);
-        let types = this.retrieveFromListFunction(this.pokeApiClient.getTypeList);
+        if (!!this.retrievingPromise) {
+            return this.retrievingPromise;
+        }
+        
+        this.retrievingPromise = new Promise<RawDataObject>(async (resolve, reject) => {
+            try {
+                let generations = this.retrieveFromListFunction(this.pokeApiClient.getGenerationList);
+                let versionGroups = this.retrieveFromListFunction(this.pokeApiClient.getVersionGroupList);
+                let versions = this.retrieveFromListFunction(this.pokeApiClient.getVersionList);
+                let evolutionChains = this.retrieveFromListFunction(this.pokeApiClient.getEvolutionChainList);
+                let species = this.retrieveFromListFunction(this.pokeApiClient.getPokemonSpeciesList);
+                let varieties = this.retrieveFromListFunction(this.pokeApiClient.getPokemonList);
+                let forms = this.retrieveFromListFunction(this.pokeApiClient.getPokemonFormList);
+                let abilities = this.retrieveFromListFunction(this.pokeApiClient.getAbilityList);
+                let moves = this.retrieveFromListFunction(this.pokeApiClient.getMoveList);
+                let natures = this.retrieveFromListFunction(this.pokeApiClient.getNatureList);
+                let stats = this.retrieveFromListFunction(this.pokeApiClient.getStatList);
+                let types = this.retrieveFromListFunction(this.pokeApiClient.getTypeList);
 
-        this.rawDataModel.generations = await generations;
-        this.rawDataModel.versionGroups = await versionGroups;
-        this.rawDataModel.versions = await versions;
-        this.rawDataModel.evolutionChains = await evolutionChains;
-        this.rawDataModel.species = await species;
-        this.rawDataModel.varieties = await varieties;
-        this.rawDataModel.forms = await forms;
-        this.rawDataModel.abilities = await abilities;
-        this.rawDataModel.moves = await moves;
-        this.rawDataModel.natures = await natures;
-        this.rawDataModel.stats = await stats;
-        this.rawDataModel.types = await types;
+                this.rawDataModel.generations = await generations;
+                this.rawDataModel.versionGroups = await versionGroups;
+                this.rawDataModel.versions = await versions;
+                this.rawDataModel.evolutionChains = await evolutionChains;
+                this.rawDataModel.species = await species;
+                this.rawDataModel.varieties = await varieties;
+                this.rawDataModel.forms = await forms;
+                this.rawDataModel.abilities = await abilities;
+                this.rawDataModel.moves = await moves;
+                this.rawDataModel.natures = await natures;
+                this.rawDataModel.stats = await stats;
+                this.rawDataModel.types = await types;
+            } catch (error) {
+                reject(error);
+                return;
+            }
 
-        return this.rawDataModel;
+            resolve(this.rawDataModel);
+        });
+
+        return this.retrievingPromise;
     }
 
     //#region private methods
