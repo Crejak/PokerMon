@@ -1,37 +1,37 @@
 import { PokeApiClient } from "./pokeApiClient";
-import { RawDataObject } from "../model/rawDataModel";
+import { RawDataMapObject } from "../model/rawDataModel";
 import * as PokeApi from "../model/pokeApiModel";
 
 export class DataRetriever {
     pokeApiClient: PokeApiClient;
-    rawDataModel: RawDataObject;
-    retrievingPromise: Promise<RawDataObject>;
+    rawDataModel: RawDataMapObject;
+    retrievingPromise: Promise<RawDataMapObject>;
 
     constructor(pokeApiClient: PokeApiClient) {
         this.pokeApiClient = pokeApiClient;
         this.retrievingPromise = null;
         this.rawDataModel = {
-            generations: [],
-            versionGroups: [],
-            versions: [],
-            evolutionChains: [],
-            species: [],
-            varieties: [],
-            forms: [],
-            abilities: [],
-            moves: [],
-            natures: [],
-            stats: [],
-            types: []
+            generations: {},
+            versionGroups: {},
+            versions: {},
+            evolutionChains: {},
+            species: {},
+            varieties: {},
+            forms: {},
+            abilities: {},
+            moves: {},
+            natures: {},
+            stats: {},
+            types: {}
         };
     }
 
-    async retrieve(): Promise<RawDataObject> {
+    async retrieve(): Promise<RawDataMapObject> {
         if (!!this.retrievingPromise) {
             return this.retrievingPromise;
         }
         
-        this.retrievingPromise = new Promise<RawDataObject>(async (resolve, reject) => {
+        this.retrievingPromise = new Promise<RawDataMapObject>(async (resolve, reject) => {
             try {
                 let generations = this.retrieveFromListFunction(this.pokeApiClient.getGenerationList);
                 let versionGroups = this.retrieveFromListFunction(this.pokeApiClient.getVersionGroupList);
@@ -71,14 +71,18 @@ export class DataRetriever {
 
     //#region private methods
 
-    private async retrieveFromListFunction<T extends PokeApi.Resource>(resourceListFunction: () => Promise<PokeApi.APIResourceList<T>>): Promise<T[]> {
-        let resourceList = await resourceListFunction.apply(this.pokeApiClient);
+    private async retrieveFromListFunction<T extends PokeApi.Resource>(resourceListFunction: () => Promise<PokeApi.APIResourceList<T>>): Promise<{[key: string]: T}> {
+        let result: {[key: string]: T} = {};
+        let resourceList: PokeApi.APIResourceList<T> = await resourceListFunction.apply(this.pokeApiClient);
 
-        let promises = resourceList.results.map(ar => {
-            return this.pokeApiClient.get(ar);
+        let promises = resourceList.results.map(async ar => {
+            let promise = this.pokeApiClient.get(ar);
+            result[ar.url] = await promise;
+            return promise;
         });
 
-        return await Promise.all(promises);
+        await Promise.all(promises);
+        return result;
     }
 
     //#endregion

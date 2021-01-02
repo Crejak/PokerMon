@@ -1,10 +1,13 @@
 {
-    "dependencies": {
-        "@types/node": "^14.14.16"
-    },
     "scripts": {
         "build": "esbuild ./src/bundle.ts --bundle --sourcemap --external:https --outfile=./dist/js/bundle.js",
         "start": "esbuild ./src/bundle.ts --bundle --sourcemap --external:https --outfile=./dist/js/bundle.js --serve",
         "retrieve": "esbuild ./src/retrieve.ts --bundle --platform=node --outfile=./dist/js/retrieve.js && node ./dist/js/retrieve.js --trace-warnings"
+    },
+    "dependencies": {
+        "@types/node": "^14.14.17",
+        "esbuild": "^0.8.28",
+        "typescript": "^4.1.3"
     }
 }
+ 

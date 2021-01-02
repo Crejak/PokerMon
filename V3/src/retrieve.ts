@@ -12,6 +12,6 @@ import { RAW_DATA_FILENAME } from "./utils/consts";
         logging: true
     });
     let retriever = new DataRetriever(pokeApiClient);
-    let rawData = await retriever.retrieve();
-    await writeJson(rawData, RAW_DATA_FILENAME);
+    let rawDataMap = await retriever.retrieve();
+    await writeJson(rawDataMap, RAW_DATA_FILENAME);
 })();

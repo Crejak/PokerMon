@@ -280,7 +280,7 @@ export interface PokemonAbility {
 
 export interface PokemonMove {
     move: NamedAPIResource<Move>;
-    version_groudetails: PokemonMoveVersion[];
+    version_group_details: PokemonMoveVersion[];
 }
 
 export interface PokemonMoveVersion {
